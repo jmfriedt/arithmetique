@@ -1,0 +1,36 @@
+PROJ_NAME =test
+CC=avr-gcc
+OBJ=avr-objcopy
+SRCS=usb_avr.o mandelbrot.o
+REPERTOIRE=/home/jmfriedt/enseignement/ufr/platforms/Atmega32/
+MCU     = atmega32u4
+DFU     = dfu-programmer
+
+DRAPEAU =-Wall -mmcu=$(MCU) -Os -Wall -I$(REPERTOIRE)/VirtualSerial -I$(REPERTOIRE)/lufa-LUFA-140928 -DF_USB=16000000UL -DF_CPU=16000000UL -std=gnu99
+#DRAPEAU +=-Dfl
+
+all:$(PROJ_NAME).bin
+
+$(PROJ_NAME).bin: $(PROJ_NAME).elf
+	$(OBJ) -Obinary $(PROJ_NAME).elf $(PROJ_NAME).bin
+	$(OBJ) -Oihex $(PROJ_NAME).elf $(PROJ_NAME).hex
+
+$(PROJ_NAME).elf: $(SRCS)
+	$(CC) -mmcu=atmega32u4 -L$(REPERTOIRE)/VirtualSerial -o $(PROJ_NAME).elf $(SRCS) $(LDFLAGS) -lVirtualSerial
+
+usb_avr.o: usb_avr.c
+	$(CC) $(DRAPEAU) -c usb_avr.c
+
+mandelbrot.o: mandelbrot.c
+	$(CC) $(DRAPEAU) -c mandelbrot.c # -Dflottant 
+
+clean:
+	rm *.o $(PROJ_NAME).elf $(PROJ_NAME).bin
+
+flash: $(PROJ_NAME).bin
+	avrdude -c avr109 -b57600 -D -p $(MCU) -P /dev/ttyACM0 -e -U flash:w:$(EXEC).out	
+
+flash_dfu: $(PROJ_NAME).bin
+	@$(DFU) $(MCU) erase
+	@$(DFU) $(MCU) flash $(PROJ_NAME).hex
+	@$(DFU) $(MCU) reset

@@ -1,0 +1,35 @@
+# https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html#Implicit-Variables
+
+NAME 	=	test
+COMPIL	?=	arm-none-eabi-gcc
+OBJ	?=	arm-none-eabi-objcopy
+SRCS	?=	uart_f1.o mandelbrot.o
+CM3DIR	=	/home/jmfriedt/sat/libopencm3
+
+CFLAGS  ?= -Wall -mthumb -mcpu=cortex-m3 -DSTM32F1 --static -nostartfiles -I$(CM3DIR)/include
+#CFLAGS +=-Dfl
+LDFLAGS ?= -L$(CM3DIR)/lib -Tstm32f1.ld -lopencm3_stm32f1
+
+all:$(NAME).bin
+
+$(NAME).bin: $(NAME).elf
+	$(OBJ) -Obinary $(NAME).elf $(NAME).bin
+
+$(NAME).elf: $(SRCS)
+	$(COMPIL) $(CFLAGS) -o $(NAME).elf $(SRCS) $(LDFLAGS)
+
+uart_f1.o: uart_f1.c
+	$(COMPIL) $(CFLAGS) -c uart_f1.c
+
+mandelbrot.o: mandelbrot.c
+	$(COMPIL) $(CFLAGS) -Dmicro -c mandelbrot.c # -Dflottant 
+
+clean:
+	rm *.o $(NAME).elf $(NAME).bin
+
+flash: $(NAME).bin
+	stm32flash.sh -w $(NAME).bin /dev/ttyUSB0
+	# st-flash write $(NAME).bin 0x8000000
+
+run: $(NAME).elf
+	qemu-system-arm -cpu cortex-m3 -machine lm3s6965evb -nographic -vga none -net none -serial mon:stdio -kernel $(NAME).elf

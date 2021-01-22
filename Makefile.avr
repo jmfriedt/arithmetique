@@ -1,0 +1,37 @@
+NAME	=	test
+CC	?=	avr-gcc
+OBJ	?=	avr-objcopy
+SRCS	?=	uart_avr.o mandelbrot.o
+MCU     = 	atmega32u4
+DFU     = 	dfu-programmer
+
+CFLAGS =-g3 -Wall -mmcu=$(MCU) -Os -Wall -DF_CPU=16000000UL -I/usr/local/include/simavr/avr
+CFLAGS +=-Dfl
+
+all:$(NAME).bin
+
+$(NAME).bin: $(NAME).elf
+	$(OBJ) -Obinary $(NAME).elf $(NAME).bin
+	$(OBJ) -Oihex $(NAME).elf $(NAME).hex
+
+$(NAME).elf: $(SRCS)
+	$(CC) -mmcu=atmega32u4 -o $(NAME).elf $(SRCS) $(LDFLAGS)
+
+uart_avr.o: uart_avr.c
+	$(CC) $(CFLAGS) -c uart_avr.c
+
+mandelbrot.o: mandelbrot.c
+	$(CC) $(CFLAGS) -c mandelbrot.c
+
+clean:
+	rm *.o $(NAME).elf $(NAME).bin
+
+flash: $(NAME).bin
+	avrdude -c avr109 -b57600 -D -p $(MCU) -P /dev/ttyACM0 -e -U flash:w:$(EXEC).out	
+flash_dfu: $(NAME).bin
+	@$(DFU) $(MCU) erase
+	@$(DFU) $(MCU) flash $(NAME).hex
+	@$(DFU) $(MCU) reset
+
+run: $(NAME).elf
+	simavr -f 16000000 -m atmega32u4 $(NAME).elf
