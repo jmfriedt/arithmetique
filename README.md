@@ -12,3 +12,12 @@ Link (``ln -s`` for a symbolic link) the Makefile for the targetted
 architecture to the name ``Makefile`` and run ``make``. Select
 ``-Dfl`` to activated floating point calculation, otherwise
 fixed point calculation is used.
+
+Family picture, result of Mandelbrot and Newton fractals computed on the microcontrollers
+with ASCII output on the UART.
+
+<img src="picts/family.png">
+
+<img src="picts/mandelbrot.png">
+
+<img src="picts/newton.png">
